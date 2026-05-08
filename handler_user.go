@@ -12,7 +12,7 @@ import (
 
 func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Name string `name`
+		Name string `json:"name"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -35,9 +35,9 @@ func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	respondithJSON(w, 201, databaseUserToUser(user))
+	respondWithJSON(w, 201, databaseUserToUser(user))
 }
 
 func (apiConfig *apiConfig) handlerGetUserByApiKey(w http.ResponseWriter, r *http.Request, user database.User) {
-	respondithJSON(w, 200, databaseUserToUser(user))
+	respondWithJSON(w, 200, databaseUserToUser(user))
 }
