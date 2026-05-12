@@ -5,7 +5,10 @@
 package middleware
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/tolu-c/rss-go/internal/model"
@@ -32,7 +35,8 @@ func New(s *store.Store) *Middleware {
 
 // Auth wraps an AuthedHandler so the underlying handler only runs when a
 // valid API key resolves to an existing user. Failures short-circuit with
-// 401 (missing/malformed key) or 400 (key not found).
+// 401 (missing/malformed/unknown key) or 500 (lookup failure). Internal
+// errors are logged but never echoed to the client.
 func (m *Middleware) Auth(handler AuthedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		apiKey, err := security.GetApiKey(r.Header)
@@ -43,7 +47,12 @@ func (m *Middleware) Auth(handler AuthedHandler) http.HandlerFunc {
 
 		user, err := m.store.GetUserByApiKey(r.Context(), apiKey)
 		if err != nil {
-			response.Error(w, http.StatusBadRequest, fmt.Sprintf("Failed to get user: %v", err))
+			if errors.Is(err, sql.ErrNoRows) {
+				response.Error(w, http.StatusUnauthorized, "invalid API key")
+				return
+			}
+			log.Printf("middleware: GetUserByApiKey: %v", err)
+			response.Error(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
