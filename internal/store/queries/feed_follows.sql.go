@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: feed_follows.sql
 
-package database
+package queries
 
 import (
 	"context"
